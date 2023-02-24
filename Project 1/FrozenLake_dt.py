@@ -113,37 +113,37 @@ class FrozenLakeEnv:
     a hole, and 0 otherwise.
     '''
 
-    def __init__(self, mapData="Default", mapSize=4, isSlippery=False, slipChance=0.0):
+	def __init__(self, mapData="Default", mapSize=4, isSlippery=False, slipChance=0.0):
     	#if no map data provided, use default maps
-    	if mapData == "Default":
-    		if mapSize == 4:
-    			mapData = DEFAULT_MAPS["4x4"]
-    		elif mapSize == 8:
-	    		mapData = DEFAULT_MAPS["8x8"]
-   	 		elif mapSize == 10:
-    			mapData = DEFAULT_MAPS["10x10"]
+		if mapData == "Default":
+			if mapSize == 4:
+				mapData = DEFAULT_MAPS["4x4"]
+			elif mapSize == 8:
+				mapData = DEFAULT_MAPS["8x8"]
+			elif mapSize == 10:
+				mapData = DEFAULT_MAPS["10x10"]
     	
-    	elif mapData == "newMap":
-    		mapData = randomMapGenerator(mapSize)
+		elif mapData == "newMap":
+			mapData = randomMapGenerator(mapSize)
 
-    	else:
-    		mapData = DEFAULT_MAPS["4x4"]
+		else:
+			mapData = DEFAULT_MAPS["4x4"]
 
     	#checks for whether floor is slippery, updates slipchance if it is:
-    	if isSlippery:
-    		if slipchance != 0:
-    			self.slipChance = slipchance
-    		else:
-    			self.slipChance = 0.2
+		if isSlippery:
+			if slipchance != 0:
+				self.slipChance = slipchance
+			else:
+				self.slipChance = 0.2
 
     	# Initialize data:
-    	self.lastAction = None
-    	self.num_row, self.num_col = self.mapData.shape
-    	self.num_state = self.num_row * self.num_col
-    	self.action_space = [LEFT, DOWN, RIGHT, UP]
-    	self.num_action = len(self.action_space)
+		self.lastAction = None
+		self.num_row, self.num_col = self.mapData.shape
+		self.num_state = self.num_row * self.num_col
+		self.action_space = [LEFT, DOWN, RIGHT, UP]
+		self.num_action = len(self.action_space)
 
-    	self.actions = {
+		self.actions = {
     		LEFT: (-1,0),
     		RIGHT: (1,0),
     		UP: (0,1),
@@ -151,90 +151,90 @@ class FrozenLakeEnv:
     	}
 
     	# Store location of all starting points "S" in the map
-    	self.initialStates = [(x,y) for x in range(self.num_row) for y in range(self.num_col) 
+		self.initialStates = [(x,y) for x in range(self.num_row) for y in range(self.num_col) 
     							if mapData[x][y]=="S"]
 
     	# When environment initialized, current state == None. Agent needs to perform reset()
     	# to update and pick the initial start state
-    	self.currState = None
+		self.currState = None
 
-    	'''
+		'''
     	Create dictionary of lists for the probability matrix of every state-action pair
     	where P[state][action] == [(probability, nextState, reward, terminate), ...]
     	
 		Probability of action leading to nextexpected state is 1 when not slippery
 		Else, there is a ?? chance of moving to an unintended state 
     	'''
-    	self.probabilityMatrix = {}
-    	for row in range(self.num_row)
-	    	for col in range(self.num_col):
-	    		s = (row * self.num_col) + col 
-	    		probabilityMatrix[s] = {}
-	    		for a in range(self.num_action):
-	    			probabilityMatrix[s][a] = []
+		self.probabilityMatrix = {}
+		for row in range(self.num_row):
+			for col in range(self.num_col):
+				s = (row * self.num_col) + col 
+				probabilityMatrix[s] = {}
+				for a in range(self.num_action):
+					probabilityMatrix[s][a] = []
 
-    	def update_prob_matrix(row, col, action):
-    		reward = 0
-    		terminate = False
+		def update_prob_matrix(row, col, action):
+			reward = 0
+			terminate = False
     		
     		#Update state
-    		movement = self.actions[action]
-    		currLoc = (row,col)
-    		newLoc = list(map(sum,zip(movement,currLoc)))
+			movement = self.actions[action]
+			currLoc = (row,col)
+			newLoc = list(map(sum,zip(movement,currLoc)))
 
-    		for i in range(2):
-    			if  newLoc[i] > (self.num_row-1):
-    				newLoc[i] = self.num_row - 1
-    			elif newLoc[i] < 0:
-    				newLoc[i] = 0
+			for i in range(2):
+				if  newLoc[i] > (self.num_row-1):
+					newLoc[i] = self.num_row - 1
+				elif newLoc[i] < 0:
+					newLoc[i] = 0
 
-    		newState = tuple(newLoc)
-    		newCellType = mapData[newLoc[0]][newLoc[1]]
+			newState = tuple(newLoc)
+			newCellType = mapData[newLoc[0]][newLoc[1]]
     		
     		# Check if cell is a hole or goal, else pass
-    		if newCellType == "G":
-    			terminate = True
-    			reward = 1
-    		elif newCellType == "H":
-    			terminate = True
-    			reward = -1
+			if newCellType == "G":
+				terminate = True
+				reward = 1
+			elif newCellType == "H":
+				terminate = True
+				reward = -1
     		
-    		return newState, reward, terminate
+			return newState, reward, terminate
 
-    	for row in range(self.num_row):
-    		for col in range(self.num_col):
+		for row in range(self.num_row):
+			for col in range(self.num_col):
     			# State in 1D
-    			s = row * self.num_col + col
+				s = row * self.num_col + col
 
-    			for a in range(self.num_action):
-    				P = self.probabilityMatrix[s][a]
-    				spot = mapData[row][col]
+				for a in range(self.num_action):
+					P = self.probabilityMatrix[s][a]
+					spot = mapData[row][col]
 
     				# Check if spot is goal or hole
     				# Actions taken on those spots will not change agent's status and terminate episode
-    				if spot == "G" or spot == "H":
-    					P.append((1.0, s, 0, True))
-    				else:
-    					if isSlippery:
+					if spot == "G" or spot == "H":
+						P.append((1.0, s, 0, True))
+					else:
+						if isSlippery:
     						# Random actions 
-    						pass
+							pass
 
 
-    def reset(self):
-    	'''
+	def reset(self):
+		'''
     	Reset state to the randomly selected intial state
     	Other parameters of environment remain same
 
     	return: index of initial state
     	'''
 
-    	self.lastAction = None
-    	self.currState = random.choice(self.initialStates)
+		self.lastAction = None
+		self.currState = random.choice(self.initialStates)
 
-    	return self.currState
+		return self.currState
 
-    def step(self, action):
-    	'''
+	def step(self, action):
+		'''
     	Update state given an action and current state
     	
 		Parameters:
@@ -246,6 +246,6 @@ class FrozenLakeEnv:
     	'''
 
     	# Store all possible transitions for state-action pair
-    	transitions = self.probabilityMatrix[self.currState][action]
+		transitions = self.probabilityMatrix[self.currState][action]
     	# Store all probability values for each possible transition
-    	prob_transitions = [t[0] for t in transitions]
+		prob_transitions = [t[0] for t in transitions]
