@@ -21,8 +21,7 @@ DEFAULT_MAPS["8x8"] = ["SFFFFFFF",
 				        "FHHFFFHF",
 				        "FHFFHFHF",
 				        "FFFHFFFG"]
-DEFAULT_MAPS["10x10"] = [
-				        "SFFFHFFFHH", 
+DEFAULT_MAPS["10x10"] = ["SFFFHFFFHH", 
 				        "FFFFHHFFFF", 
 				        "FFFFFFFFFF", 
 				        "HHFFFFHFFH", 
@@ -70,7 +69,7 @@ def randomMapGenerator(size = 4, p=0.25):
 		generatedMap = np.random.choice(["F","H"], (size,size), p=[1-p, p])
 		generatedMap[0][0] = "S"
 		generatedMap[-1][-1] = "G"
-		validMap = mapValidity(generated_map, size)
+		validMap = mapValidity(generatedMap, size)
 
 		# find number of holes in map
 		numHole = np.count_nonzero(generatedMap == "H")
@@ -131,24 +130,20 @@ class FrozenLakeEnv:
 
     	#checks for whether floor is slippery, updates slipchance if it is:
 		if isSlippery:
-			if slipchance != 0:
-				self.slipChance = slipchance
+			if slipChance != 0:
+				self.slipChance = slipChance
 			else:
 				self.slipChance = 0.2
 
+		self.mapData = np.asarray(mapData, dtype="c")
+
     	# Initialize data:
 		self.lastAction = None
-		self.num_row, self.num_col = self.mapData.shape
+		self.num_row = mapSize 
+		self.num_col = mapSize
 		self.num_state = self.num_row * self.num_col
 		self.action_space = [LEFT, DOWN, RIGHT, UP]
 		self.num_action = len(self.action_space)
-
-		self.actions = {
-    		LEFT: (-1,0),
-    		RIGHT: (1,0),
-    		UP: (0,1),
-    		DOWN: (0,-1)
-    	}
 
     	# Store location of all starting points "S" in the map
 		self.initialStates = [(x,y) for x in range(self.num_row) for y in range(self.num_col) 
@@ -169,28 +164,29 @@ class FrozenLakeEnv:
 		for row in range(self.num_row):
 			for col in range(self.num_col):
 				s = (row * self.num_col) + col 
-				probabilityMatrix[s] = {}
+				self.probabilityMatrix[s] = {}
 				for a in range(self.num_action):
-					probabilityMatrix[s][a] = []
+					self.probabilityMatrix[s][a] = []
 
 		def update_prob_matrix(row, col, action):
+			newRow, newCol = row, col
 			reward = 0
 			terminate = False
     		
-    		#Update state
-			movement = self.actions[action]
-			currLoc = (row,col)
-			newLoc = list(map(sum,zip(movement,currLoc)))
-
-			for i in range(2):
-				if  newLoc[i] > (self.num_row-1):
-					newLoc[i] = self.num_row - 1
-				elif newLoc[i] < 0:
-					newLoc[i] = 0
-
-			newState = tuple(newLoc)
-			newCellType = mapData[newLoc[0]][newLoc[1]]
+    		#Update Col/Row based on action chosen
+			if action == LEFT:
+				newCol = max(col-1, 0)
+			if action == RIGHT:
+				newCol = min(col+1, mapSize)
+			if action == UP:
+				newRow = max(0, row+1)
+			if action == DOWN:
+				newRow = min(row+1, mapSize)
     		
+			# Update state and cell type
+			newState = newRow * self.num_col + newCol
+			newCellType = self.mapData[newRow][newCol]
+
     		# Check if cell is a hole or goal, else pass
 			if newCellType == "G":
 				terminate = True
@@ -217,7 +213,15 @@ class FrozenLakeEnv:
 					else:
 						if isSlippery:
     						# Random actions 
-							pass
+							for randomAction in [(a-1) % 4, a, (a+1) % 4]:
+								newState, reward, terminate = update_prob_matrix(row,col,randomAction)
+								if randomAction == a:
+									P.append((1.0 - self.slipChance, newState, reward, terminate))
+								else:
+									P.append((self.slipChance, newState, reward, terminate))
+						else:
+							newState, reward, terminate = update_prob_matrix(row,col,a)
+							P.append((1.0, newState, reward, terminate))
 
 
 	def reset(self):
@@ -232,13 +236,22 @@ class FrozenLakeEnv:
 		self.currState = random.choice(self.initialStates)
 
 		return self.currState
+	
+	def randomAction(self):
+		'''
+		Choose random action
+		
+		return: a (random action)
+		'''
+		a = self.action_space[np.random.randint(self.num_action)]
+		return a
 
 	def step(self, action):
 		'''
     	Update state given an action and current state
     	
 		Parameters:
-			Action taken (LEFT,RIGHT,UP,DOWN)
+			Action a: taken (LEFT,RIGHT,UP,DOWN)
 
     	Return: 
     	Tuple: (next valid state, reward, termination)
@@ -249,3 +262,66 @@ class FrozenLakeEnv:
 		transitions = self.probabilityMatrix[self.currState][action]
     	# Store all probability values for each possible transition
 		prob_transitions = [t[0] for t in transitions]
+
+		self.lastAction = action
+
+		result = 0
+		result_sum = prob_transitions[0]
+		chance = np.random.random()
+
+		'''
+		Comments to be added here to explain code
+		'''
+		while result_sum < chance:
+			result += 1
+			result_sum += prob_transitions[result]
+
+		probability, newState, reward, terminate = transitions[result]
+		self.currState = newState
+		return (newState, reward, terminate, 0)
+	
+	def render(self, mode="human"):
+		'''
+		Rendering method from openAI environment
+		'''
+
+		def colorize(string, color, bold=False, highlight=False):
+			"""Return string surrounded by appropriate terminal color codes to
+            print colorized text.  Valid colors: gray, red, green, yellow,
+            blue, magenta, cyan, white, crimson
+            """
+			color2num = dict(
+                gray=30,
+                red=31,
+                green=32,
+                yellow=33,
+                blue=34,
+                magenta=35,
+                cyan=36,
+                white=37,
+                crimson=38,
+            )
+
+			attr = []
+			num = color2num[color]
+			if highlight:
+				num += 10
+			attr.append(str(num))
+			if bold:
+				attr.append("1")
+			attrs = ";".join(attr)
+			return "\x1b[%sm%s\x1b[0m" % (attrs, string)
+
+		outfile = StringIO() if mode == "ansi" else sys.stdout
+
+		row, col = self.currState // self.num_col, self.currState % self.num_col
+		desc = self.mapData.tolist()
+		desc = [[c.decode("utf-8") for c in line] for line in desc]
+		desc[row][col] = colorize(desc[row][col], "red", highlight=True)
+		if self.lastAction is not None:
+			outfile.write(
+                "  ({})\n".format(["Left", "Down", "Right", "Up"][self.lastAction])
+            )
+		else:
+			outfile.write("\n")
+		outfile.write("\n".join("".join(line) for line in desc) + "\n")
