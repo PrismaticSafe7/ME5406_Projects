@@ -66,6 +66,7 @@ class FVMonteCarlo(GenericTrainer):
 			- Policy table (1D array)
 			- Training statistics (dictionary)
 		'''		
+		
 		reward_var= "FVMC_Rewards" + str(ep_no)  # Reward received in each episode
 		step_var = "FVMC_noSteps" + str(ep_no)  # No. of steps taken in each episode
 		acc_var ="FVMC_Accuracy" + str(ep_no) # Accuracy of data in each episode
@@ -110,5 +111,82 @@ class FVMonteCarlo(GenericTrainer):
 						data[acc_var].append(1)
 
 			visited = set()
+			for counter, (state, action, reward) in emunerate(G_episode):
+				if (state, action) not in visited:	
+					pass
 
+
+class SARSA(GenericTrainer):
+	def __init__(self, env):
+		super().__init__(env)
+	
+	def train(self, ep_no=1):
+		reward_var= "SARSA_Rewards" + str(ep_no)  # Reward received in each episode
+		step_var = "SARSA_noSteps" + str(ep_no)  # No. of steps taken in each episode
+		acc_var ="SARSA_Accuracy" + str(ep_no) # Accuracy of data in each episode
+		data = {reward_var:[], step_var:[], acc_var:[]}
+
+		for i in range(self.num_episodes):
+			# Infrom us the number of episodes we are going throug
+			if (i % 100) == 0:
+				print(i)
+
+			# Reset environment
+			state = self.env.reset()
+
+			# Initialize data 
+			eps_reward = 0		# Total reward earned during episode
+			terminate = False	# Bool to terminate episode
+			noActionTaken = 0	# total no. of action taken during the episode
+		pass
+
+
+class QLearning(GenericTrainer):
+	def __init__(self, env):
+		super().__init__(env)
+	
+	def train(self, ep_no=1):
+		reward_var= "Q_Rewards" + str(ep_no)  # Reward received in each episode
+		step_var = "Q_noSteps" + str(ep_no)  # No. of steps taken in each episode
+		acc_var ="Q_Accuracy" + str(ep_no) # Accuracy of data in each episode
+		data = {reward_var:[], step_var:[], acc_var:[]}
+		
+		for i in range(self.num_episodes):
+			# Infrom us the number of episodes we are going throug
+			if (i % 100) == 0:
+				print(i)
+
+			# Reset environment
+			state = self.env.reset()
+
+			# Initialize data 
+			eps_reward = 0		# Total reward earned during episode
+			terminate = False	# Bool to terminate episode
+			noActionTaken = 0	# total no. of action taken during the episode
+
+			while not terminate:
+				action = self.getNextAction(state)
+				new_state, reward, terminate, info = self.env.step(action)
+				
+				self.Q_table[state,action] = self.Q_table * (1 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state, :]))
+
+				state = new_state
+				eps_reward += reward
+
+				if terminate == False:
+					noActionTaken += 1					
+					if noActionTaken == (self.max_steps):
+						# Initiate failure to find goal/hole found
+						terminate = True
+						data[step_var] = self.max_steps
+						data[acc_var].append(0)
+
+				elif terminate == True:
+					data[step_var] = noActionTaken
+					if reward != 1:
+						data[acc_var].append(0)
+					elif reward == 1:
+						data[acc_var].append(1)
 			
+			self.episodes_reward.append(eps_reward)
+			data[reward_var].append(eps_reward)
