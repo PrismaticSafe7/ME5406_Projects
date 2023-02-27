@@ -1,4 +1,5 @@
 import numpy as np
+import random as rd
 
 class GenericTrainer():
 	'''
@@ -16,17 +17,98 @@ class GenericTrainer():
 		self.max_steps = 50000		# Max number of steps in 1 episode
 
 		# Tuning Parameters for learner
-		self.lr = 0.1		# Learning Rate
+		self.alpha = 0.1	# Learning Rate
 		self.gamma = 0.9 	# Discount factor
 		self.epsilon = 0.1 	# Exploration rate
+		self.tolerance = 0.005 # Difference in Qreward must exceed tolerance to be updated
 
 		# Initialization of tables - Policy and Q table
-			# Policy table - Provides policy that will be cho
 			# Q Table - table that stores Q value (expected reward for each action
 			# 			in a particular state of environment)
 		self.Q_table = np.zeros((self.num_state, self.num_action)) # Initializing of Q_table
-		self.P_table = {
-			s: [1/self.num_action] * self.num_action for s in range(self.num_state)
-		} # Initializing of Policy table
 
 		self.episodes_reward = [] # Reward received in each episode
+
+
+	def getNextAction(self, state):
+		'''
+		Chooses between either:
+			1) Exploration  (chance <= epsilon)
+			2) Exploitation (chance > epsilon)
+
+		returns:
+			- int: Chosen action value 
+		'''
+
+		# Produce a random number from [0,1)
+		chance = np.random.random()
+
+		# if chance is higher than epsilon, (epsilon,1], choose the best action
+		# else, randomly choose an action
+		if self.epsilon < chance:
+			action = np.argmax(self.Q_table[state, :])
+		else:
+			action = rd.randint(0,3)
+		
+		return action
+
+
+class FVMonteCarlo(GenericTrainer):
+	def __init__(self, env):
+		super().__init__(env)
+		self.G_table = {(s,a): [] for s in range(self.num_state) for a in range(self.num_action)}
+
+	def train(self, ep_no = 1):
+		'''
+		Trains the model and output the final Q_table
+
+		Outputs:
+			- Policy table (1D array)
+			- Training statistics (dictionary)
+		'''		
+		reward_var= "FVMC_Rewards" + str(ep_no)  # Reward received in each episode
+		step_var = "FVMC_noSteps" + str(ep_no)  # No. of steps taken in each episode
+		acc_var ="FVMC_Accuracy" + str(ep_no) # Accuracy of data in each episode
+		data = {reward_var:[], step_var:[], acc_var:[]}
+
+		for i in range(self.num_episodes):
+			# Infrom us the number of episodes we are going throug
+			if (i % 100) == 0:
+				print(i)
+
+			# Reset environment
+			state = self.env.reset()
+
+			# Initialize data 
+			G_episode = []		# List to store tuple of (state, action, reward)
+			eps_reward = 0		# Total reward earned during episode
+			terminate = False	# Bool to terminate episode
+			noActionTaken = 0	# total no. of action taken during the episode
+
+			while not terminate:
+				action = self.getNextAction(state)
+				new_state, reward, terminate, info = self.env.step(action)
+				
+				eps_reward += reward
+				G_episode.append((state, action, reward))
+
+				state = new_state
+
+				if terminate == False:
+					noActionTaken += 1					
+					if noActionTaken == (self.max_steps):
+						# Initiate failure to find goal/hole found
+						terminate = True
+						data[step_var] = self.max_steps
+						data[acc_var].append(0)
+
+				elif terminate == True:
+					data[step_var] = noActionTaken
+					if reward != 1:
+						data[acc_var].append(0)
+					elif reward == 1:
+						data[acc_var].append(1)
+
+			visited = set()
+
+			
