@@ -187,7 +187,26 @@ class SARSA(GenericTrainer):
 
 				state = new_state
 				action = new_action
-		pass
+				eps_reward += reward
+
+				if terminate == False:
+					noActionTaken += 1					
+					if noActionTaken == (self.max_steps):
+						# Initiate failure to find goal/hole found
+						terminate = True
+						data[step_var] = self.max_steps
+						data[acc_var].append(0)
+
+				elif terminate == True:
+					data[step_var] = noActionTaken
+					if reward != 1:
+						data[acc_var].append(0)
+					elif reward == 1:
+						data[acc_var].append(1)
+			
+			self.episodes_reward.append(eps_reward)
+			data[reward_var].append(eps_reward)
+		self.policy = np.argmax(self.Q_table, axis=1)
 
 
 class QLearning(GenericTrainer):
