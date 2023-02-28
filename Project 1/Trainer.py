@@ -26,9 +26,9 @@ class GenericTrainer():
 			# Q Table - table that stores Q value (expected reward for each action
 			# 			in a particular state of environment)
 		self.Q_table = np.zeros((self.num_state, self.num_action)) # Initializing of Q_table
+		self.policy = np.zeros(self.num_state, dtype=int) 
 
 		self.episodes_reward = [] # Reward received in each episode
-
 
 	def getNextAction(self, state):
 		'''
@@ -52,6 +52,32 @@ class GenericTrainer():
 		
 		return action
 
+	def test(self):
+		for episode in range(3):
+			state = self.env.reset()
+			terminate = False
+			noActionTaken
+			time.sleep(1)
+
+			while not terminate:
+				action = np.argmax(self.Q_table[state, :])
+				new_state, reward, terminate, info = self.env.step(action)
+				state = new_state
+
+				if terminate:
+					self.env.render()
+					if reward == 1:
+						print("Goal Accomplished")
+					else:
+						print("You Fell in the hole, Game Over")
+				else:
+					noActionTaken += 1
+					if noActionTaken == self.max_steps:
+						self.env.render()
+						terminate = True
+						print("Failed to find goal")
+				
+
 
 class FVMonteCarlo(GenericTrainer):
 	def __init__(self, env):
@@ -63,7 +89,6 @@ class FVMonteCarlo(GenericTrainer):
 		Trains the model and output the final Q_table
 
 		Outputs:
-			- Policy table (1D array)
 			- Training statistics (dictionary)
 		'''		
 		
@@ -110,11 +135,25 @@ class FVMonteCarlo(GenericTrainer):
 					elif reward == 1:
 						data[acc_var].append(1)
 
-			visited = set()
-			for counter, (state, action, reward) in emunerate(G_episode):
-				if (state, action) not in visited:	
-					pass
+			G_data = {}
+			for (state, action, reward) in reversed(G_episode):
+				G = self.gamma * G + reward
+				G_data[(state,action)] = G 
 
+			for key in G_data:
+				state, action = key
+				G_table[key].append(G_data[key])
+				self.Q_table[state][action] = np.mean(self.G_table(key))
+			
+			self.episodes_reward.append(eps_reward)
+			data[reward_var].append(eps_reward)
+
+		
+			for s in range(self.num_state):
+				curr_best = np.argmax(Q[s])
+				self.policy[s] = curr_best
+		
+		return data
 
 class SARSA(GenericTrainer):
 	def __init__(self, env):
@@ -138,6 +177,16 @@ class SARSA(GenericTrainer):
 			eps_reward = 0		# Total reward earned during episode
 			terminate = False	# Bool to terminate episode
 			noActionTaken = 0	# total no. of action taken during the episode
+			action = self.getNextAction(state)
+			
+			while not terminate:
+				new_state, reward, terminate, info = self.env.step(action)
+				new_action = self.getNextAction(new_state)
+
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * Q[new_state][new_action] - Q[state][action])
+
+				state = new_state
+				action = new_action
 		pass
 
 
