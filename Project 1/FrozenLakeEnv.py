@@ -112,7 +112,7 @@ class FrozenLakeEnv:
     a hole, and 0 otherwise.
     '''
 
-	def __init__(self, mapData="Default", mapSize=4, isSlippery=False, slipChance=0.0):
+	def __init__(self, mapData="Default", mapSize=4, isSlippery=False, slipChance=0.2):
     	#if no map data provided, use default maps
 		if mapData == "Default":
 			if mapSize == 4:
