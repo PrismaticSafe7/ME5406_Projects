@@ -206,7 +206,10 @@ class SARSA(GenericTrainer):
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
+		
 		self.policy = np.argmax(self.Q_table, axis=1)
+	
+		return data
 
 
 class QLearning(GenericTrainer):
@@ -236,7 +239,7 @@ class QLearning(GenericTrainer):
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
-				self.Q_table[state,action] = self.Q_table * (1 - self.alpha) + self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state, :]))
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state])) - self.Q_table[state[action]]
 
 				state = new_state
 				eps_reward += reward
@@ -258,3 +261,7 @@ class QLearning(GenericTrainer):
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
+		
+		self.policy = np.argmax(self.Q_table, axis=1)
+		
+		return data
