@@ -1,5 +1,7 @@
+import time
 import numpy as np
 import random as rd
+import pandas as pd
 
 class GenericTrainer():
 	'''
@@ -56,7 +58,7 @@ class GenericTrainer():
 		for episode in range(3):
 			state = self.env.reset()
 			terminate = False
-			noActionTaken
+			noActionTaken = 0
 			time.sleep(1)
 
 			while not terminate:
@@ -76,10 +78,17 @@ class GenericTrainer():
 						self.env.render()
 						terminate = True
 						print("Failed to find goal")
-				
+	
+	def data_conversion(self, data):
+		keys = []
+		for key in data:
+			keys.append(key)
+		df = pd.DataFrame(data,columns = key)
+		return df		
 
 
 class FVMonteCarlo(GenericTrainer):
+	# Does not terminate until it reaches terminal state
 	def __init__(self, env):
 		super().__init__(env)
 		self.G_table = {(s,a): [] for s in range(self.num_state) for a in range(self.num_action)}
@@ -122,11 +131,6 @@ class FVMonteCarlo(GenericTrainer):
 
 				if terminate == False:
 					noActionTaken += 1					
-					if noActionTaken == (self.max_steps):
-						# Initiate failure to find goal/hole found
-						terminate = True
-						data[step_var] = self.max_steps
-						data[acc_var].append(0)
 
 				elif terminate == True:
 					data[step_var] = noActionTaken
@@ -142,7 +146,7 @@ class FVMonteCarlo(GenericTrainer):
 
 			for key in G_data:
 				state, action = key
-				G_table[key].append(G_data[key])
+				self.G_table[key].append(G_data[key])
 				self.Q_table[state][action] = np.mean(self.G_table(key))
 			
 			self.episodes_reward.append(eps_reward)
@@ -150,10 +154,12 @@ class FVMonteCarlo(GenericTrainer):
 
 		
 			for s in range(self.num_state):
-				curr_best = np.argmax(Q[s])
+				curr_best = np.argmax(self.Q_table[s])
 				self.policy[s] = curr_best
 		
-		return data
+		data_df = self.data_conversion(data)
+
+		return data_df, data
 
 class SARSA(GenericTrainer):
 	def __init__(self, env):
@@ -183,7 +189,7 @@ class SARSA(GenericTrainer):
 				new_state, reward, terminate, info = self.env.step(action)
 				new_action = self.getNextAction(new_state)
 
-				self.Q_table[state][action] += self.alpha * (reward + self.gamma * Q[new_state][new_action] - Q[state][action])
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * self.Q_table[new_state][new_action] - self.Q_table[state][action])
 
 				state = new_state
 				action = new_action
@@ -208,8 +214,9 @@ class SARSA(GenericTrainer):
 			data[reward_var].append(eps_reward)
 		
 		self.policy = np.argmax(self.Q_table, axis=1)
-	
-		return data
+		data_df = self.data_conversion(data)
+
+		return data_df, data
 
 
 class QLearning(GenericTrainer):
@@ -263,5 +270,6 @@ class QLearning(GenericTrainer):
 			data[reward_var].append(eps_reward)
 		
 		self.policy = np.argmax(self.Q_table, axis=1)
-		
-		return data
+		data_df = self.data_conversion(data)
+
+		return data_df, data
