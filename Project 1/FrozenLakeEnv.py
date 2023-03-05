@@ -146,7 +146,7 @@ class FrozenLakeEnv:
 		self.num_action = len(self.action_space)
 
     	# Store location of all starting points "S" in the map
-		self.initialStates = [(x,y) for x in range(self.num_row) for y in range(self.num_col) 
+		self.initialStates = [(x* self.num_col + y) for x in range(self.num_row) for y in range(self.num_col) 
     							if mapData[x][y]=="S"]
 
     	# When environment initialized, current state == None. Agent needs to perform reset()
@@ -177,24 +177,25 @@ class FrozenLakeEnv:
 			if action == LEFT:
 				newCol = max(col-1, 0)
 			if action == RIGHT:
-				newCol = min(col+1, mapSize)
+				newCol = min(col+1, mapSize-1)
 			if action == UP:
-				newRow = max(0, row+1)
+				newRow = max(0, row-1)
 			if action == DOWN:
-				newRow = min(row+1, mapSize)
+				newRow = min(row+1, mapSize-1)
     		
 			# Update state and cell type
 			newState = newRow * self.num_col + newCol
 			newCellType = self.mapData[newRow][newCol]
 
     		# Check if cell is a hole or goal, else pass
-			if newCellType == "G":
+			if newCellType == b'G':
 				terminate = True
 				reward = 1
-			elif newCellType == "H":
+			elif newCellType == b'H':
 				terminate = True
 				reward = -1
-    		
+				
+			print(reward)
 			return newState, reward, terminate
 
 		for row in range(self.num_row):

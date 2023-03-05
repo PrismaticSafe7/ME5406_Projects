@@ -15,7 +15,7 @@ class GenericTrainer():
 		self.num_action = env.num_action
 		self.num_state = env.num_state
 
-		self.num_episodes = 10000	# Total number of episodes
+		self.num_episodes = 3000	# Total number of episodes
 		self.max_steps = 50000		# Max number of steps in 1 episode
 
 		# Tuning Parameters for learner
@@ -83,8 +83,8 @@ class GenericTrainer():
 		keys = []
 		for key in data:
 			keys.append(key)
-		df = pd.DataFrame(data,columns = key)
-		return df		
+		df = pd.DataFrame(data,columns = keys)
+		return df
 
 
 class FVMonteCarlo(GenericTrainer):
@@ -119,6 +119,7 @@ class FVMonteCarlo(GenericTrainer):
 			eps_reward = 0		# Total reward earned during episode
 			terminate = False	# Bool to terminate episode
 			noActionTaken = 0	# total no. of action taken during the episode
+			G = 0
 
 			while not terminate:
 				action = self.getNextAction(state)
@@ -133,7 +134,7 @@ class FVMonteCarlo(GenericTrainer):
 					noActionTaken += 1					
 
 				elif terminate == True:
-					data[step_var] = noActionTaken
+					data[step_var].append(noActionTaken)
 					if reward != 1:
 						data[acc_var].append(0)
 					elif reward == 1:
@@ -147,7 +148,7 @@ class FVMonteCarlo(GenericTrainer):
 			for key in G_data:
 				state, action = key
 				self.G_table[key].append(G_data[key])
-				self.Q_table[state][action] = np.mean(self.G_table(key))
+				self.Q_table[state][action] = np.mean(self.G_table[key])
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
@@ -200,11 +201,11 @@ class SARSA(GenericTrainer):
 					if noActionTaken == (self.max_steps):
 						# Initiate failure to find goal/hole found
 						terminate = True
-						data[step_var] = self.max_steps
+						data[step_var].append(self.max_steps)
 						data[acc_var].append(0)
 
 				elif terminate == True:
-					data[step_var] = noActionTaken
+					data[step_var].append(noActionTaken)
 					if reward != 1:
 						data[acc_var].append(0)
 					elif reward == 1:
@@ -246,7 +247,7 @@ class QLearning(GenericTrainer):
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
-				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state])) - self.Q_table[state[action]]
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state])) - self.Q_table[state][action]
 
 				state = new_state
 				eps_reward += reward
@@ -256,11 +257,11 @@ class QLearning(GenericTrainer):
 					if noActionTaken == (self.max_steps):
 						# Initiate failure to find goal/hole found
 						terminate = True
-						data[step_var] = self.max_steps
+						data[step_var].append(self.max_steps)
 						data[acc_var].append(0)
 
 				elif terminate == True:
-					data[step_var] = noActionTaken
+					data[step_var].append(noActionTaken)
 					if reward != 1:
 						data[acc_var].append(0)
 					elif reward == 1:
