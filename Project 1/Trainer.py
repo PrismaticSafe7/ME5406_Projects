@@ -15,14 +15,14 @@ class GenericTrainer():
 		self.num_action = env.num_action
 		self.num_state = env.num_state
 
-		self.num_episodes = 3000	# Total number of episodes
+		self.num_episodes = 10000	# Total number of episodes
 		self.max_steps = 50000		# Max number of steps in 1 episode
 
 		# Tuning Parameters for learner
-		self.alpha = 0.1	# Learning Rate
+		self.alpha = 0.2	# Learning Rate
 		self.gamma = 0.9 	# Discount factor
-		self.epsilon = 0.1 	# Exploration rate
-		self.tolerance = 0.005 # Difference in Qreward must exceed tolerance to be updated
+		self.epsilon = 1 	# Exploration rate
+		self.tolerance = 0.0005 # Difference in Qreward must exceed tolerance to be updated
 
 		# Initialization of tables - Policy and Q table
 			# Q Table - table that stores Q value (expected reward for each action
@@ -158,6 +158,8 @@ class FVMonteCarlo(GenericTrainer):
 				curr_best = np.argmax(self.Q_table[s])
 				self.policy[s] = curr_best
 		
+			self.epsilon = ((self.num_episodes - i- 1)/(self.num_episodes))
+		
 		data_df = self.data_conversion(data)
 
 		return data_df, data
@@ -213,6 +215,8 @@ class SARSA(GenericTrainer):
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
+
+			self.epsilon = 1/(i+1)
 		
 		self.policy = np.argmax(self.Q_table, axis=1)
 		data_df = self.data_conversion(data)
@@ -269,6 +273,8 @@ class QLearning(GenericTrainer):
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
+
+			self.epsilon = 1/(i+1)
 		
 		self.policy = np.argmax(self.Q_table, axis=1)
 		data_df = self.data_conversion(data)

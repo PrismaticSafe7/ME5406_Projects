@@ -19,14 +19,14 @@ class FrozenLake:
             data_df = pd.concat([data_df,new_df], axis=1)
             datas.append(data)
             if i != no_of_runs - 1:
-                MonteCarlo.Q_table = np.zeros((self.num_state, self.num_action))
-                MonteCarlo.G_table = {(s,a): [] for s in range(self.num_state) for a in range(self.num_action)}
-                MonteCarlo.policy = np.zeros(self.num_state, dtype=int)
+                MonteCarlo.Q_table = np.zeros((MonteCarlo.num_state, MonteCarlo.num_action))
+                MonteCarlo.G_table = {(s,a): [] for s in range(MonteCarlo.num_state) for a in range(MonteCarlo.num_action)}
+                MonteCarlo.policy = np.zeros(MonteCarlo.num_state, dtype=int)
         
         if Test:
             MonteCarlo.test()
         
-        self.dataManager("MC.csv", "FVMC", data_df, no_of_runs)
+        self.dataManager("MC_10.csv", "FVMC", data_df, no_of_runs)
 
 
     def runSARSA(self, no_of_runs=1, Test=False):
@@ -40,13 +40,13 @@ class FrozenLake:
             data_df = pd.concat([data_df,new_df], axis=1)
             datas.append(data)
             if i != no_of_runs - 1:
-                SARSA.Q_table = np.zeros((self.num_state, self.num_action))
-                SARSA.policy = np.zeros(self.num_state, dtype=int)
+                SARSA.Q_table = np.zeros((SARSA.num_state, SARSA.num_action))
+                SARSA.policy = np.zeros(SARSA.num_state, dtype=int)
         
         if Test:
             SARSA.test()
         
-        self.dataManager("SARSA.csv", "SARSA", data_df, no_of_runs)
+        self.dataManager("SARSA_10.csv", "SARSA", data_df, no_of_runs)
 
     def runQL(self, no_of_runs=1, Test=False):
         QL = tr.QLearning(self.env)
@@ -59,13 +59,13 @@ class FrozenLake:
             data_df = pd.concat([data_df,new_df], axis=1)
             datas.append(data)
             if i != no_of_runs - 1:
-                QL.Q_table = np.zeros((self.num_state, self.num_action))
-                QL.policy = np.zeros(self.num_state, dtype=int)
+                QL.Q_table = np.zeros((QL.num_state, QL.num_action))
+                QL.policy = np.zeros(QL.num_state, dtype=int)
         
         if Test:
             QL.test()
         
-        self.dataManager("QL.csv", "Q", data_df, no_of_runs)
+        self.dataManager("QL_10.csv", "Q", data_df, no_of_runs)
 
         pass
     
@@ -99,8 +99,17 @@ class FrozenLake:
 
 
 if __name__ == "__main__":
-    # Initalize Frozen_Lake Class
+    np.random.seed(5)
+
+    # # Initalize Frozen_Lake Class
     frozenLake = FrozenLake()
     frozenLake.runMC(1)
+    # frozenLake.runSARSA(1)
+    # frozenLake.runQL(1)
+
+
+    # frozenLake = FrozenLake("newMap",10)
+    # print(frozenLake.env)
+    # frozenLake.runMC(1)
     # frozenLake.runSARSA(1)
     # frozenLake.runQL(1)

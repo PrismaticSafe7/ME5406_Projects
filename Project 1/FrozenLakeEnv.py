@@ -195,7 +195,6 @@ class FrozenLakeEnv:
 				terminate = True
 				reward = -1
 				
-			print(reward)
 			return newState, reward, terminate
 
 		for row in range(self.num_row):
