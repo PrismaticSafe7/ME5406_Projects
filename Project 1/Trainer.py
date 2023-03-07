@@ -15,11 +15,11 @@ class GenericTrainer():
 		self.num_action = env.num_action
 		self.num_state = env.num_state
 
-		self.num_episodes = 10000	# Total number of episodes
+		self.num_episodes = 3000	# Total number of episodes
 		self.max_steps = 50000		# Max number of steps in 1 episode
 
 		# Tuning Parameters for learner
-		self.alpha = 0.2	# Learning Rate
+		self.alpha = 0.1	# Learning Rate
 		self.gamma = 0.9 	# Discount factor
 		self.epsilon = 1 	# Exploration rate
 		self.tolerance = 0.0005 # Difference in Qreward must exceed tolerance to be updated
@@ -251,13 +251,15 @@ class QLearning(GenericTrainer):
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
-				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state])) - self.Q_table[state][action]
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state]) - self.Q_table[state][action])
 
 				state = new_state
 				eps_reward += reward
 
 				if terminate == False:
-					noActionTaken += 1					
+					noActionTaken += 1
+					# self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state]) - self.Q_table[state][action])
+					
 					if noActionTaken == (self.max_steps):
 						# Initiate failure to find goal/hole found
 						terminate = True
