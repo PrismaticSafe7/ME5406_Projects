@@ -1,6 +1,5 @@
 import time
 import numpy as np
-import random as rd
 import pandas as pd
 
 class GenericTrainer():
@@ -43,15 +42,16 @@ class GenericTrainer():
 		'''
 
 		# Produce a random number from [0,1)
-		chance = np.random.random()
+		chance = np.random.rand()
 
-		# if chance is higher than epsilon, (epsilon,1], choose the best action
+		# if chance is higher than epsilon, (epsilon,1], and all values in Q table[state] not 0,
+		# choose the best action
 		# else, randomly choose an action
-		if self.epsilon < chance:
+		if self.epsilon < chance and (not np.all((self.Q_table[state]==0))):
 			action = np.argmax(self.Q_table[state, :])
 		else:
-			action = rd.randint(0,3)
-		
+			action = np.random.randint(0,3)
+
 		return action
 
 	def test(self):
@@ -91,6 +91,7 @@ class FVMonteCarlo(GenericTrainer):
 	# Does not terminate until it reaches terminal state
 	def __init__(self, env):
 		super().__init__(env)
+		self.epsilon = 0.1
 		self.G_table = {(s,a): [] for s in range(self.num_state) for a in range(self.num_action)}
 
 	def train(self, ep_no = 1):
@@ -158,7 +159,7 @@ class FVMonteCarlo(GenericTrainer):
 				curr_best = np.argmax(self.Q_table[s])
 				self.policy[s] = curr_best
 		
-			self.epsilon = ((self.num_episodes - i- 1)/(self.num_episodes))
+			# self.epsilon = 1/(i+1)
 		
 		data_df = self.data_conversion(data)
 
@@ -251,7 +252,7 @@ class QLearning(GenericTrainer):
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
-				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state])) - self.Q_table[state][action]
+				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state]) - self.Q_table[state][action])
 
 				state = new_state
 				eps_reward += reward
@@ -273,6 +274,8 @@ class QLearning(GenericTrainer):
 			
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
+
+
 
 			self.epsilon = 1/(i+1)
 		

@@ -270,7 +270,11 @@ class FrozenLakeEnv:
 		chance = np.random.random()
 
 		'''
-		Comments to be added here to explain code
+		"Only if slip chance is True"
+		While sum of probability from index 0 is smaller than,
+		increase the index and add the prob until we find the
+		sum which is higher than the chance
+		This index will be chosen as the final action taken
 		'''
 		while result_sum < chance:
 			result += 1

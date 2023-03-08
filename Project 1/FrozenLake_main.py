@@ -99,17 +99,17 @@ class FrozenLake:
 
 
 if __name__ == "__main__":
-    np.random.seed(5)
+    np.random.seed(12)
 
-    # # Initalize Frozen_Lake Class
-    frozenLake = FrozenLake()
-    frozenLake.runMC(1)
-    # frozenLake.runSARSA(1)
-    # frozenLake.runQL(1)
-
-
-    # frozenLake = FrozenLake("newMap",10)
-    # print(frozenLake.env)
+    # Initalize Frozen_Lake Class
+    # frozenLake = FrozenLake()
     # frozenLake.runMC(1)
     # frozenLake.runSARSA(1)
     # frozenLake.runQL(1)
+
+
+    frozenLake = FrozenLake("Default",10)
+    # print(frozenLake.env)
+    # frozenLake.runMC(1)
+    # frozenLake.runSARSA(1)
+    frozenLake.runQL(1)
