@@ -18,6 +18,7 @@ class FrozenLake:
             new_df, data = MonteCarlo.train(i+1)
             data_df = pd.concat([data_df,new_df], axis=1)
             datas.append(data)
+            print(MonteCarlo.policy)
             if i != no_of_runs - 1:
                 MonteCarlo.Q_table = np.zeros((MonteCarlo.num_state, MonteCarlo.num_action))
                 MonteCarlo.G_table = {(s,a): [] for s in range(MonteCarlo.num_state) for a in range(MonteCarlo.num_action)}
@@ -39,6 +40,7 @@ class FrozenLake:
             new_df, data = SARSA.train(i+1)
             data_df = pd.concat([data_df,new_df], axis=1)
             datas.append(data)
+            print(SARSA.policy)
             if i != no_of_runs - 1:
                 SARSA.Q_table = np.zeros((SARSA.num_state, SARSA.num_action))
                 SARSA.policy = np.zeros(SARSA.num_state, dtype=int)
@@ -57,6 +59,7 @@ class FrozenLake:
         for i in range(no_of_runs):
             new_df, data = QL.train(i+1)
             data_df = pd.concat([data_df,new_df], axis=1)
+            print(QL.policy)
             datas.append(data)
             if i != no_of_runs - 1:
                 QL.Q_table = np.zeros((QL.num_state, QL.num_action))
@@ -102,14 +105,14 @@ if __name__ == "__main__":
     np.random.seed(12)
 
     # Initalize Frozen_Lake Class
-    # frozenLake = FrozenLake()
+    frozenLake = FrozenLake()
     # frozenLake.runMC(1)
-    # frozenLake.runSARSA(1)
-    # frozenLake.runQL(1)
+    frozenLake.runSARSA(1)
+    frozenLake.runQL(1)
 
 
-    frozenLake = FrozenLake("Default",10)
+    # frozenLake = FrozenLake("Default",10)
     # print(frozenLake.env)
     # frozenLake.runMC(1)
     # frozenLake.runSARSA(1)
-    frozenLake.runQL(1)
+    # frozenLake.runQL(1)

@@ -4,6 +4,8 @@ import random
 import sys
 from io import StringIO
 
+np.random.seed(12)
+
 # Possible action of agent
 LEFT = 0
 DOWN = 1
