@@ -48,10 +48,10 @@ class GenericTrainer():
 		# if chance is higher than epsilon, (epsilon,1], and all values in Q table[state] not 0,
 		# choose the best action
 		# else, randomly choose an action
-		if self.epsilon < chance and (not np.all((self.Q_table[state]==0))):
+		if self.epsilon < chance:
 			action = np.argmax(self.Q_table[state, :])
 		else:
-			action = np.random.choice([0,1,2,3],p=[0.25,0.25,0.25,0.25])
+			action = np.random.randint(0,4)
 
 		return action
 
@@ -169,12 +169,7 @@ class FVMonteCarlo(GenericTrainer):
 class SARSA(GenericTrainer):
 	def __init__(self, env):
 		super().__init__(env)
-		self.epsilon = 0.1
-		# for i in range(self.env.num_row):
-		# 	for j in range(self.env.num_col):
-		# 		if not(self.env.mapData[i][j] == b'G' or self.env.mapData[i][j] == b'H'):
-		# 			for action in range(4):
-		# 				self.Q_table[i* self.env.num_col + j][action] = 0.02
+		# self.epsilon = 0.1
 	
 	def train(self, ep_no=1):
 		reward_var= "SARSA_Rewards" + str(ep_no)  # Reward received in each episode
@@ -235,7 +230,7 @@ class SARSA(GenericTrainer):
 class QLearning(GenericTrainer):
 	def __init__(self, env):
 		super().__init__(env)
-		self.epsilon = 0.1
+		# self.epsilon = 0.1
 		for i in range(self.env.num_row):
 			for j in range(self.env.num_col):
 				if not(self.env.mapData[i][j] == b'G' or self.env.mapData[i][j] == b'H'):
@@ -288,7 +283,7 @@ class QLearning(GenericTrainer):
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
 
-			# self.epsilon = 1/(i+1)
+			self.epsilon = 1/(i+1)
 		
 		self.policy = np.argmax(self.Q_table, axis=1)
 		data_df = self.data_conversion(data)
