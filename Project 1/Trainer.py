@@ -124,17 +124,22 @@ class FVMonteCarlo(GenericTrainer):
 			G = 0
 
 			while not terminate:
+				# Get next action given a state and get the next state, reward and whether to terminate
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
+				# append curr_state, action and reward into a list
 				eps_reward += reward
 				G_episode.append((state, action, reward))
 
 				state = new_state
 
 				if terminate == False:
+					# if terminate is not true, add 1 to number of step
+					# used for data collection
 					noActionTaken += 1					
 
+				# if terminate true, add step data and accuracy data to list in dict
 				elif terminate == True:
 					data[step_var].append(noActionTaken)
 					if reward != 1:
@@ -143,24 +148,27 @@ class FVMonteCarlo(GenericTrainer):
 						data[acc_var].append(1)
 
 			G_data = {}
+			# go through the list in reverse and assign the value of G into the dict
+			# if there were (state,action) pair further in the reversed list, replace
+			# the value within the dict
 			for (state, action, reward) in reversed(G_episode):
 				G = self.gamma * G + reward
 				G_data[(state,action)] = G 
 
+			# Update the Q_table
 			for key in G_data:
 				state, action = key
 				self.G_table[key].append(G_data[key])
 				self.Q_table[state][action] = np.mean(self.G_table[key])
 			
+			# Add reward data into the list
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
 
-		
+			#update the policy
 			for s in range(self.num_state):
 				curr_best = np.argmax(self.Q_table[s])
 				self.policy[s] = curr_best
-		
-			# self.epsilon = 1/(i+1)
 		
 		data_df = self.data_conversion(data)
 
@@ -189,19 +197,25 @@ class SARSA(GenericTrainer):
 			eps_reward = 0		# Total reward earned during episode
 			terminate = False	# Bool to terminate episode
 			noActionTaken = 0	# total no. of action taken during the episode
+			# Initialize first action given starting state
 			action = self.getNextAction(state)
 			
 			while not terminate:
+				# Get the next state, reward and whether to terminate and the next action
 				new_state, reward, terminate, info = self.env.step(action)
 				new_action = self.getNextAction(new_state)
 
+				# Update Q_table
 				self.Q_table[state][action] += self.alpha * (reward + self.gamma * self.Q_table[new_state][new_action] - self.Q_table[state][action])
 
+				# Update current state and action
 				state = new_state
 				action = new_action
 				eps_reward += reward
 
 				if terminate == False:
+					# if terminate is not true, add 1 to number of step
+					# used for data collection
 					noActionTaken += 1					
 					if noActionTaken == (self.max_steps):
 						# Initiate failure to find goal/hole found
@@ -209,6 +223,7 @@ class SARSA(GenericTrainer):
 						data[step_var].append(self.max_steps)
 						data[acc_var].append(0)
 
+				# if terminate true, add step data and accuracy data to list in dict
 				elif terminate == True:
 					data[step_var].append(noActionTaken)
 					if reward != 1:
@@ -219,8 +234,10 @@ class SARSA(GenericTrainer):
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
 
+			# Epsilon decay method, comment out if to use constant epsilon
 			self.epsilon = 1/(i+1)
 		
+		# Get the final optimal policy
 		self.policy = np.argmax(self.Q_table, axis=1)
 		data_df = self.data_conversion(data)
 
@@ -231,6 +248,8 @@ class QLearning(GenericTrainer):
 	def __init__(self, env):
 		super().__init__(env)
 		# self.epsilon = 0.1
+
+		# Initiate all non-terminal state Q-value to 0.02
 		for i in range(self.env.num_row):
 			for j in range(self.env.num_col):
 				if not(self.env.mapData[i][j] == b'G' or self.env.mapData[i][j] == b'H'):
@@ -257,15 +276,20 @@ class QLearning(GenericTrainer):
 			noActionTaken = 0	# total no. of action taken during the episode
 
 			while not terminate:
+				# Get next action given a state and get the next state, reward and whether to terminate
 				action = self.getNextAction(state)
 				new_state, reward, terminate, info = self.env.step(action)
 				
+				# Update Q_table
 				self.Q_table[state][action] += self.alpha * (reward + self.gamma * np.max(self.Q_table[new_state]) - self.Q_table[state][action])
 
+				# Update current state
 				state = new_state
 				eps_reward += reward
 
 				if terminate == False:
+					# if terminate is not true, add 1 to number of step
+					# used for data collection
 					noActionTaken += 1					
 					if noActionTaken == (self.max_steps):
 						# Initiate failure to find goal/hole found
@@ -273,6 +297,7 @@ class QLearning(GenericTrainer):
 						data[step_var].append(self.max_steps)
 						data[acc_var].append(0)
 
+				# if terminate true, add step data and accuracy data to list in dict
 				elif terminate == True:
 					data[step_var].append(noActionTaken)
 					if reward != 1:
@@ -283,8 +308,10 @@ class QLearning(GenericTrainer):
 			self.episodes_reward.append(eps_reward)
 			data[reward_var].append(eps_reward)
 
+			# Epsilon decay method, comment out if to use constant epsilon
 			self.epsilon = 1/(i+1)
 		
+		# Get the final optimal policy
 		self.policy = np.argmax(self.Q_table, axis=1)
 		data_df = self.data_conversion(data)
 

@@ -106,13 +106,12 @@ if __name__ == "__main__":
 
     # Initalize Frozen_Lake Class
     frozenLake = FrozenLake()
-    # frozenLake.runMC(1)
-    # frozenLake.runSARSA(1)
+    frozenLake.runMC(1)
+    frozenLake.runSARSA(1)
     frozenLake.runQL(1)
 
-
+    # Frozen_Lake for 10x10
     # frozenLake = FrozenLake("Default",10)
-    # print(frozenLake.env)
     # frozenLake.runMC(1)
     # frozenLake.runSARSA(1)
     # frozenLake.runQL(1)
